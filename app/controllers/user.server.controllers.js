@@ -8,10 +8,7 @@ const create_account = (req,res) => {
         last_name: Joi.string().required(),
         email: Joi.string().email().required(),
         password: Joi.string().min(8)
-            .pattern(/[A-Z]/, 'one uppercase letter')
-            .pattern(/[a-z]/, 'one lowercase letter')
-            .pattern(/[0-9]/, 'one number')
-            .pattern(/[^A-Za-z0-9]/, 'one special character')
+            .pattern(new RegEx("^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,30}$")
             .required()
     });
     const { error } = schema.validate(req.body);
@@ -62,4 +59,5 @@ module.exports = {
     create_account: create_account,
     login: login,
     logout: logout
+
 }
