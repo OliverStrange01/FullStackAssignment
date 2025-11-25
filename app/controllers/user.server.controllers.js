@@ -42,7 +42,6 @@ const login = (req, res) => {
 
     const { email, password } = value;
 
-    // THIS MUST BE INSIDE THE FUNCTION
     usersModel.authenticateUser(email, password, (err, result) => {
         if (err) return res.status(500).json({ error_message: err.message });
 

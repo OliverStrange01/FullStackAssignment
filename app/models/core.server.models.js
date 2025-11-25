@@ -23,6 +23,7 @@ const createItem = (data, done) => {
 const bidOnItem = (data, done) => {
     const sqlGetItem = `SELECT creator_id, starting_bid FROM items WHERE item_id = ?`;
     db.get(sqlGetItem, [data.item_id], (err, item) => {
+        console.log(" --- -- - -" + err);
         if (err) return done({ status: 500, message: err.message });
         if (!item) return done({ status: 404, message: 'Item not found' });
 
@@ -34,8 +35,9 @@ const bidOnItem = (data, done) => {
             SELECT amount FROM bids WHERE item_id = ? ORDER BY amount DESC LIMIT 1
         `;
         db.get(sqlGetHighest, [data.item_id], (err, row) => {
+            console.log(" ** ** * *" + err);
             if (err) return done({ status: 500, message: err.message });
-
+            
             const highest = row ? row.amount : item.starting_bid;
 
             if (data.amount <= highest) {
@@ -43,7 +45,7 @@ const bidOnItem = (data, done) => {
             }
 
             const sqlInsert = `
-                INSERT INTO bids (item_id, bidder_id, amount, bid_time)
+                INSERT INTO bids (item_id, user_id, amount, timestamp)
                 VALUES (?, ?, ?, ?)
             `;
             db.run(sqlInsert, [
@@ -52,6 +54,7 @@ const bidOnItem = (data, done) => {
                 data.amount,
                 Date.now()
             ], function(err) {
+                console.log("'####f'#'" + err);
                 if (err) return done({ status: 500, message: err.message });
                 return done(null, this.lastID);
             });
