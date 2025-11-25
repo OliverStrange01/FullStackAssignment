@@ -2,6 +2,7 @@ const users = require('../models/user.server.models')
 
 const isAuthenticated = (req, res, next) => {
     const token = req.get('X-Authorization');
+    console.log('DEBUG: token header =', token);
 
     if (!token) return res.status(401).json({ error_message: 'Unauthorized' });
 

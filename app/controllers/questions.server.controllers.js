@@ -1,6 +1,7 @@
-const Joi = require('joi')
-const usersModel = require('../models/user.server.models')
-const questionsModel = require('../models/question.server.models')
+const Joi = require('joi');
+const usersModel = require('../models/user.server.models');
+const questionsModel = require('../models/question.server.models');
+const itemsModel = require('../models/core.server.models'); // make sure you have this
 
 const ask_question = (req, res) => {
     const token = req.get('X-Authorization');
@@ -16,21 +17,29 @@ const ask_question = (req, res) => {
 
         const { error } = schema.validate(req.body);
         if (error) {
-            return res
-                .status(400)
-                .json({ error_message: error.details[0].message });
+            return res.status(400).json({ error_message: error.details[0].message });
         }
 
-        const data = {
-            question_text: req.body.question_text,
-            asked_by: userId,
-            item_id: parseInt(req.params.item_id)
-        };
+        const itemId = parseInt(req.params.item_id);
 
-        questionsModel.askQuestion(data, (err, questionId) => {
+        itemsModel.getItemById(itemId, (err, item) => {
             if (err) return res.sendStatus(500);
+            if (!item) return res.sendStatus(404);
 
-            return res.status(201).json({ question_id: questionId });
+            if (item.seller_id === userId) {
+                return res.sendStatus(403); // creator cannot ask a question
+            }
+
+            const data = {
+                question: req.body.question_text,
+                asked_by: userId,
+                item_id: itemId
+            };
+
+            questionsModel.askQuestion(data, (err, questionId) => {
+                if (err) return res.sendStatus(500);
+                return res.status(200).json({ question_id: questionId });
+            });
         });
     });
 };
@@ -45,7 +54,7 @@ const answer_question = (req, res) => {
         if (!userId) return res.sendStatus(401);
 
         const schema = Joi.object({
-            answer_text: Joi.string().min(1).max(1000).required()
+            answer: Joi.string().min(1).max(1000).required()
         });
 
         const { error } = schema.validate(req.body);
@@ -56,8 +65,7 @@ const answer_question = (req, res) => {
         }
 
         const data = {
-            answer_text: req.body.answer_text,
-            answered_by: userId,
+            answer: req.body.answer,
             question_id: parseInt(req.params.question_id)
         };
 
@@ -71,17 +79,16 @@ const answer_question = (req, res) => {
 
 // GET ALL QUESTIONS FOR AN ITEM
 const get_question = (req, res) => {
-    const itemId = parseInt(req.params.item_id);
+    const itemId = req.params.item_id ? parseInt(req.params.item_id) : null;
 
-    questionsModel.getQuestionsForItem(itemId, (err, questions) => {
+    questionsModel.getQuestions(itemId, (err, questions) => {
         if (err) return res.sendStatus(500);
-
         return res.status(200).json(questions);
     });
 };
 
 module.exports = {
-    ask_question,
-    answer_question,
-    get_question
+    ask_question: ask_question,
+    answer_question: answer_question,
+    get_question: get_question
 };
